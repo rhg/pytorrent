@@ -46,10 +46,14 @@ class TorrentFile(object):
     def __init__(self, raw):
         d = bencode.bdecode(raw)
         try:
-            self.announce = d['announce']
-            self.announcelist = getattr(d, 'announce-list', None)
+            self.announce = [d['announce']]
         except KeyError:
-            self.magnetinfo = d['magnet-info']
+            try:
+                self.announce = [ l[0] for l in d['announce-list'] ]
+            except KeyError:
+                self.magnetinfo = d['magnet-info']
+                self.announce = [self.magnetinfo['announce']]
+
         self.comment = getattr(d, 'comment', 'No Comment')
         self.creator = getattr(d, 'created by', 'Unknown')
         self.date = getattr(d, 'created on', None)
@@ -57,7 +61,7 @@ class TorrentFile(object):
         self.info = InfoDict(d['info'])
 
     def __str__(self):
-        a = '%s torrent created by %s. %s'
-        b = (self.info, self.creator, self.comment)
+        a = '%s torrent created by %s. %s. Announce: %s.'
+        b = (self.info, self.creator, self.comment, self.announce)
         return a % b
 
