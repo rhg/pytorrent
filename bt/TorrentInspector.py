@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from StringIO import StringIO
 import bencode
 
 def open_torrent(fn):
@@ -17,9 +18,13 @@ class BencDict(dict):
             pass
 
 class InfoDict(BencDict):
-    def __init__(self, d):
-        self['len'] = d['piece length']
-        self['num'] = d['pieces']
+    def __init__(self, d, e):
+        self['plen'] = d['piece length']
+        pieces = d['pieces']
+        if e:
+            pieces = pieces.decode(e)
+        pieces = StringIO(pieces)
+        self['pieces'] = [ piece for piece in pieces.read(20) ]
         try:
             self['private'] = d['private']
         except KeyError:
@@ -58,7 +63,7 @@ class TorrentFile(object):
         self.creator = getattr(d, 'created by', 'Unknown')
         self.date = getattr(d, 'created on', None)
         self.encoding = getattr(d, 'encoding', None)
-        self.info = InfoDict(d['info'])
+        self.info = InfoDict(d['info'], self.encoding)
 
     def __str__(self):
         a = '%s torrent created by %s. %s. Announce: %s.'
