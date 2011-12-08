@@ -1,0 +1,11 @@
+Pymission is a bittorrent library in python.
+Eventually I might transition to py3k and/or cython.
+A purpose is to allow a native python interface.
+The other reason is for experience in:
+    git
+    bittorrent
+    OO
+    HTTP
+    python
+tinfo.py is a simple test script that takes 1 arg: a torrent file.
+It calls bt.open_torrent on sys.argv[1] and prints the resulting object.
