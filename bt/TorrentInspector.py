@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 from StringIO import StringIO
+import hashlib
 import bencode
+from Tracker import Tracker, TrackerRequest
+
+
+PEER_ID = 'pytorrent123'*2
 
 def open_torrent(fn):
     try:
@@ -40,6 +45,9 @@ class InfoDict(BencDict):
             except KeyError:
                 pass
 
+    def left(self):
+        return self['plen'] * len(self['pieces'])
+
     def __str__(self):
         try:
             file = self['file']
@@ -63,7 +71,23 @@ class TorrentFile(object):
         self.creator = getattr(d, 'created by', 'Unknown')
         self.date = getattr(d, 'created on', None)
         self.encoding = getattr(d, 'encoding', None)
-        self.info = InfoDict(d['info'], self.encoding)
+        info = d['info']
+        sha = hashlib.sha1()
+        sha.update(bencode.bencode(info))
+        self.info_hash = sha.digest()
+        self.info = InfoDict(info, self.encoding)
+
+        self._update_stats()
+        self.trackers = [ Tracker(TrackerRequest(hash=self.info_hash, ID=PEER_ID, url=url, stats=self.stats)) for url in self.announce ]
+
+    def uploaded(self):
+        return 0
+
+    def downloaded(self):
+        return 0
+
+    def _update_stats(self):
+        self.stats = (self.uploaded(), self.downloaded(), self.info.left())
 
     def __str__(self):
         a = '%s torrent created by %s. %s. Announce: %s.'
