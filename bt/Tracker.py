@@ -9,7 +9,7 @@ class TrackerRequest(list):
         self.info_hash = args['hash']
         self.peer_id = args['ID']
         self.settings = args['stats']
-        #self.ip = args['ip']
+        self.port = args['port']
 
 class Tracker(object):
     '''An abstraction af a tracker.
@@ -22,14 +22,14 @@ class Tracker(object):
         self.params = [
             ('info_hash', tf.info_hash),
             ('peer_id', tf.peer_id),
-            #('port', tf.settings['port']),
+            ('port', tf.port),
             ('compact', 1)
-            #('ip', tf.ip),
+            #('ip', tf.settings[3]),
             ]
         initial = self._update_vars(tf, 'start')
         url = '%s?%s' % (tf.url, urllib.urlencode(initial))
         req = urllib2.Request(url)
-        req.add_header('User-agent', 'pytorrent 0.0001 (www.github.com/rhg/pytorrent')
+        req.add_header('User-agent', 'pytorrent 0.0002 (www.github.com/rhg/pytorrent')
         res = urllib2.urlopen(req)
         data = res.read()
         print data

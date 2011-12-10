@@ -30,6 +30,7 @@ class InfoDict(BencDict):
             pieces = pieces.decode(e)
         pieces = StringIO(pieces)
         self['pieces'] = [ piece for piece in pieces.read(20) ]
+        self['dpieces'] = list()
         try:
             self['private'] = d['private']
         except KeyError:
@@ -37,20 +38,32 @@ class InfoDict(BencDict):
         try:
             self['files'] = d['files']
             self['dir'] = d['name']
+            self['len'] = (len(self['pieces']) * self['plen'])
         except KeyError:
-            self['file'] = d['name']
+            self['files'] = [ d['name'] ]
             self['len'] = d['length']
             try:
                 self['md5'] = d['md5sum']
             except KeyError:
                 pass
 
-    def left(self):
-        return self['plen'] * len(self['pieces'])
+    def stats(self):
+        tlen = 0
+        for f in self['files']:
+            with open(f, 'rb') as fn:
+                flen = len(fn.read())
+                tlen += flen
+        left = self['len'] - tlen
+
+        down = tlen
+
+        up = self['dpieces'] * self['plen']
+
+        return (up, down, left)
 
     def __str__(self):
         try:
-            file = self['file']
+            file = self['files']
         except KeyError:
             file = self['dir']
         return file
@@ -75,19 +88,10 @@ class TorrentFile(object):
         sha = hashlib.sha1()
         sha.update(bencode.bencode(info))
         self.info_hash = sha.digest()
+        print self.info_hash
         self.info = InfoDict(info, self.encoding)
 
-        self._update_stats()
-        self.trackers = [ Tracker(TrackerRequest(hash=self.info_hash, ID=PEER_ID, url=url, stats=self.stats)) for url in self.announce ]
-
-    def uploaded(self):
-        return 0
-
-    def downloaded(self):
-        return 0
-
-    def _update_stats(self):
-        self.stats = (self.uploaded(), self.downloaded(), self.info.left())
+        self.trackers = [ Tracker(TrackerRequest(port=9190, hash=self.info_hash, ID=PEER_ID, url=url, stats=self.info.stats())) for url in self.announce ]
 
     def __str__(self):
         a = '%s torrent created by %s. %s. Announce: %s.'
