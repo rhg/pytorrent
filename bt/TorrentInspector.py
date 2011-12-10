@@ -7,13 +7,39 @@ from Tracker import Tracker, TrackerRequest
 
 PEER_ID = 'pytorrent123'*2
 
-def open_torrent(fn):
+class NetAddress(list):
+    def compact(self):
+        a = struct.pack('>H', self._port())
+        b = struct.pack('>4B', *self._ip())
+        return ''.join([b, a])
+
+    def ip(self):
+        try:
+            return '%d.%d.%d.%d' % self._ip()
+        except TypeError:
+            return None
+
+    def port(self):
+        return '%d' % self._port()
+
+    def _ip(self):
+        if len(self) == 2:
+            return self[0]
+        else:
+            return None
+
+    def _port(self):
+        return self[-1]
+
+def open_torrent(fn, port=6884, ip=None):
     try:
         fp = open(fn, 'rb')
         raw = fp.read()
     finally:
         fp.close()
-    return TorrentFile(raw)
+    args = (ip, port)
+    na = NetAddress(args)
+    return TorrentFile(raw, na)
 
 class BencDict(dict):
     def __getattr__(self, attr):
@@ -30,7 +56,8 @@ class InfoDict(BencDict):
             pieces = pieces.decode(e)
         pieces = StringIO(pieces)
         self['pieces'] = [ piece for piece in pieces.read(20) ]
-        self['dpieces'] = list()
+        self['dpieces'] = 0
+        self['upieces'] = 0
         try:
             self['private'] = d['private']
         except KeyError:
@@ -46,20 +73,21 @@ class InfoDict(BencDict):
                 self['md5'] = d['md5sum']
             except KeyError:
                 pass
+        self['started'] = False
 
-    def stats(self):
-        tlen = 0
-        for f in self['files']:
-            with open(f, 'rb') as fn:
-                flen = len(fn.read())
-                tlen += flen
-        left = self['len'] - tlen
+    def sessionstats(self):
+        total = (len(self['pieces']) * self['plen'])
 
-        down = tlen
+        have = (self['dpieces']) * self['plen']
 
-        up = self['dpieces'] * self['plen']
+        left = total - have
 
-        return (up, down, left)
+        down = ((self['started'] == True) and [have] or [0])
+
+        up = (len(self['pieces']) - self['upieces']) * self['plen']
+        up = ((self['started'] == True) and [up] or [0])
+
+        return (up[0], down[0], left)
 
     def __str__(self):
         try:
@@ -69,7 +97,7 @@ class InfoDict(BencDict):
         return file
 
 class TorrentFile(object):
-    def __init__(self, raw):
+    def __init__(self, raw, ip):
         d = bencode.bdecode(raw)
         try:
             self.announce = [d['announce']]
@@ -91,7 +119,7 @@ class TorrentFile(object):
         print self.info_hash
         self.info = InfoDict(info, self.encoding)
 
-        self.trackers = [ Tracker(TrackerRequest(port=9190, hash=self.info_hash, ID=PEER_ID, url=url, stats=self.info.stats())) for url in self.announce ]
+        self.trackers = [ Tracker(TrackerRequest(na=ip, hash=self.info_hash, ID=PEER_ID, url=url, stats=self.info.sessionstats())) for url in self.announce ]
 
     def __str__(self):
         a = '%s torrent created by %s. %s. Announce: %s.'

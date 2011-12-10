@@ -5,11 +5,14 @@ import urllib2
 
 class TrackerRequest(list):
     def __init__(self, **args):
+        print args
         self.url = args['url']
         self.info_hash = args['hash']
         self.peer_id = args['ID']
         self.settings = args['stats']
-        self.port = args['port']
+        print self.settings
+        self.port = args['na'][1]
+        self.ip = args['na'][0]
 
 class Tracker(object):
     '''An abstraction af a tracker.
@@ -23,13 +26,13 @@ class Tracker(object):
             ('info_hash', tf.info_hash),
             ('peer_id', tf.peer_id),
             ('port', tf.port),
-            ('compact', 1)
-            #('ip', tf.settings[3]),
+            ('compact', 1),
+            ('ip', tf.ip),
             ]
         initial = self._update_vars(tf, 'start')
         url = '%s?%s' % (tf.url, urllib.urlencode(initial))
         req = urllib2.Request(url)
-        req.add_header('User-agent', 'pytorrent 0.0002 (www.github.com/rhg/pytorrent')
+        req.add_header('User-agent', 'pytorrent 0.0003 (www.github.com/rhg/pytorrent')
         res = urllib2.urlopen(req)
         data = res.read()
         print data
