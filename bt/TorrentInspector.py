@@ -1,11 +1,17 @@
 #!/usr/bin/env python
 from StringIO import StringIO
+import os
+import time
 import hashlib
 import bencode
 from Tracker import Tracker, TrackerRequest
 
 
-PEER_ID = 'pytorrent123'*2
+def _gen_peer_id(pid, timef):
+    a = pid // 5
+    b = timef // 10
+    c = 'pytorrent00'
+    return '%s-%d%d' % (c, a,b)
 
 class NetAddress(list):
     def compact(self):
@@ -31,7 +37,7 @@ class NetAddress(list):
     def _port(self):
         return self[-1]
 
-def open_torrent(fn, port=6884, ip=None):
+def open_torrent(fn, seed=os.getpid(), seedt=time.time(), port=6884, ip=None):
     try:
         fp = open(fn, 'rb')
         raw = fp.read()
@@ -39,7 +45,8 @@ def open_torrent(fn, port=6884, ip=None):
         fp.close()
     args = (ip, port)
     na = NetAddress(args)
-    return TorrentFile(raw, na)
+    pid = _gen_peer_id(seed, seedt)
+    return TorrentFile(raw, na, pid)
 
 class BencDict(dict):
     def __getattr__(self, attr):
@@ -97,7 +104,7 @@ class InfoDict(BencDict):
         return file
 
 class TorrentFile(object):
-    def __init__(self, raw, ip):
+    def __init__(self, raw, ip, pid):
         d = bencode.bdecode(raw)
         try:
             self.announce = [d['announce']]
@@ -119,7 +126,7 @@ class TorrentFile(object):
         print self.info_hash
         self.info = InfoDict(info, self.encoding)
 
-        self.trackers = [ Tracker(TrackerRequest(na=ip, hash=self.info_hash, ID=PEER_ID, url=url, stats=self.info.sessionstats())) for url in self.announce ]
+        self.trackers = [ Tracker(TrackerRequest(na=ip, hash=self.info_hash, ID=pid, url=url, stats=self.info.sessionstats())) for url in self.announce ]
 
     def __str__(self):
         a = '%s torrent created by %s. %s. Announce: %s.'
