@@ -134,11 +134,18 @@ class TorrentFile(object):
 
         self.trackers = [ Tracker(TrackerRequest(na=ip, hash=self.info_hash, ID=pid, url=url, stats=self.info.sessionstats())) for url in self.announce ]
 
+        self.info['started'] == True
+
     def get_announce(self):
         data = []
         for tracker in self.trackers:
             data.append(tracker.announce())
         return tuple(data)
+
+    def stop(self):
+        for tracker in self.trackers:
+            tracker.announce('stop')
+        self.info['started'] = False
 
     def __str__(self):
         a = '%s torrent created by %s. %s. Announce: %s.'
