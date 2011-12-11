@@ -20,11 +20,11 @@ class Peer(tuple):
         return super(Peer, cls).__new__(cls, (ip, host))
 
     def compact(self):
-        return struct.pack('>H4B', self[1], *self[0])
+        return '%s%s' % (struct.pack('>4B', *self[0]), struct.pack('>H', self[1]))
 
 class Tracker(BaseHTTPRequestHandler):
 
-    server_version = 'PyTracker/0.0002'
+    server_version = 'PyTracker/0.0003'
 
     def do_GET(self):
         tid = 'Anon\'s Test Tracker'
@@ -40,7 +40,7 @@ class Tracker(BaseHTTPRequestHandler):
             torrents[info_hash][1] += 1
         else:
             raise InvalidRequest('What\'s left?')
-        if not hasattr(rargs, 'ip'):
+        if not rargs['ip']:
             rargs['ip'] = self.client_address[0]
         npeer = Peer(rargs['ip'], rargs['port'])
         torrents[info_hash][2].append(npeer)
