@@ -2,18 +2,22 @@
 from StringIO import StringIO
 import os
 import time
+import random
 import hashlib
 import bencode
 from Tracker import Tracker, TrackerRequest
 
 
 def _gen_peer_id(pid, timef):
-    print '%s %s' % (pid, timef)
-    a = int(abs(timef / pid)) * 1000000
+    if timef is None:
+        random.seed()
+    else:
+        random.seed(timef)
+    a = pid * random.randint(0, 100000)
     print a
-    b = 'PT00'
-    c = (b, round(a, (20 - (20 - a))))
-    return '%s-%d' % c
+    b = 'PT00--'
+    c = (b, a)
+    return '%s%014d' % c
 
 class NetAddress(list):
     def compact(self):
