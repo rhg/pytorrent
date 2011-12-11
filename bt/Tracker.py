@@ -12,7 +12,7 @@ class TrackerRequest(list):
         self.settings = args['stats']
         print self.settings
         self.port = args['na'][1]
-        self.ip = args['na'][0]
+        self.ip = (args['na'][0] or [''])[0]
 
 class Tracker(object):
     '''An abstraction af a tracker.
