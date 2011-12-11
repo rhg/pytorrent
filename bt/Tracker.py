@@ -21,7 +21,7 @@ class Tracker(object):
     def __init__(self, tf):
         '''def __init__(self,tf):
         tf = a TorrentFile object'''
-        self.url = tf.url
+        self.tr = tf
         self.params = [
             ('info_hash', tf.info_hash),
             ('peer_id', tf.peer_id),
@@ -29,13 +29,13 @@ class Tracker(object):
             ('compact', 1),
             ('ip', tf.ip),
             ]
-        initial = self._update_vars(tf, 'start')
-        data = self.announce(initial)
+        data = self.announce('start')
 
-    def announce(self, initial, url=None):
+    def announce(self, event='', url=None):
         if url is None:
-            url = self.url
-        url = '%s?%s' % (url, urllib.urlencode(initial))
+            url = self.tr.url
+        opts = self._update_vars(self.tr, event)
+        url = '%s?%s' % (url, urllib.urlencode(opts))
         req = urllib2.Request(url)
         req.add_header('User-agent', 'pytorrent 0.0004 (www.github.com/rhg/pytorrent)')
         try:

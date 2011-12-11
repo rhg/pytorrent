@@ -134,6 +134,12 @@ class TorrentFile(object):
 
         self.trackers = [ Tracker(TrackerRequest(na=ip, hash=self.info_hash, ID=pid, url=url, stats=self.info.sessionstats())) for url in self.announce ]
 
+    def get_announce(self):
+        data = []
+        for tracker in self.trackers:
+            data.append(tracker.announce())
+        return tuple(data)
+
     def __str__(self):
         a = '%s torrent created by %s. %s. Announce: %s.'
         b = (self.info, self.creator, self.comment, self.announce)
