@@ -8,10 +8,12 @@ from Tracker import Tracker, TrackerRequest
 
 
 def _gen_peer_id(pid, timef):
-    a = pid // 5
-    b = timef // 10
-    c = 'pytorrent00'
-    return '%s-%d%d' % (c, a,b)
+    print '%s %s' % (pid, timef)
+    a = int(abs(timef / pid)) * 1000000
+    print a
+    b = 'PT00'
+    c = (b, round(a, (20 - (20 - a))))
+    return '%s-%d' % c
 
 class NetAddress(list):
     def compact(self):
