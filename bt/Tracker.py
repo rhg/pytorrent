@@ -30,12 +30,20 @@ class Tracker(object):
             ('ip', tf.ip),
             ]
         initial = self._update_vars(tf, 'start')
-        url = '%s?%s' % (tf.url, urllib.urlencode(initial))
+        data = self.announce(initial)
+
+    def announce(self, initial, url=None):
+        if url is None:
+            url = self.url
+        url = '%s?%s' % (url, urllib.urlencode(initial))
         req = urllib2.Request(url)
-        req.add_header('User-agent', 'pytorrent 0.0003 (www.github.com/rhg/pytorrent')
-        res = urllib2.urlopen(req)
-        data = res.read()
-        print data
+        req.add_header('User-agent', 'pytorrent 0.0004 (www.github.com/rhg/pytorrent)')
+        try:
+            res = urllib2.urlopen(req)
+            data = res.read()
+        finally:
+            res.close()
+        return data
 
     def _update_vars(self, tf, event=''):
         new = list(self.params)
